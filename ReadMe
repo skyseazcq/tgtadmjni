@@ -1,0 +1,1 @@
+gcc -D_GNU_SOURCE -o libtgtadmjni.so -shared -fPIC -I/usr/lib/jvm/java-8-oracle/include -I/usr/lib/jvm/java-8-oracle/include/linux *.c -lc
