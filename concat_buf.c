@@ -26,72 +26,66 @@
 
 #include "util.h"
 
-void concat_buf_init(struct concat_buf *b)
-{
-	b->streamf = open_memstream(&b->buf, &b->size);
-	b->err = b->streamf ? 0 : errno;
-	b->used = 0;
+void concat_buf_init(struct concat_buf *b) {
+  b->streamf = open_memstream(&b->buf, &b->size);
+  b->err = b->streamf ? 0 : errno;
+  b->used = 0;
 }
 
-int concat_printf(struct concat_buf *b, const char *format, ...)
-{
-	va_list args;
-	int nprinted;
+int concat_printf(struct concat_buf *b, const char *format, ...) {
+  va_list args;
+  int nprinted;
 
-	if (!b->err) {
-		va_start(args, format);
-		nprinted = vfprintf(b->streamf, format, args);
-		if (nprinted >= 0)
-			b->used += nprinted;
-		else {
-			b->err = nprinted;
-			fclose(b->streamf);
-			b->streamf = NULL;
-		}
-		va_end(args);
-	}
-	return b->err;
+  if (!b->err) {
+    va_start(args, format);
+    nprinted = vfprintf(b->streamf, format, args);
+    if (nprinted >= 0)
+      b->used += nprinted;
+    else {
+      b->err = nprinted;
+      fclose(b->streamf);
+      b->streamf = NULL;
+    }
+    va_end(args);
+  }
+  return b->err;
 }
 
-const char *concat_delim(struct concat_buf *b, const char *delim)
-{
-	return !b->used ? "" : delim;
+const char *concat_delim(struct concat_buf *b, const char *delim) {
+  return !b->used ? "" : delim;
 }
 
-int concat_buf_finish(struct concat_buf *b)
-{
-	if (b->streamf) {
-		fclose(b->streamf);
-		b->streamf = NULL;
-		if (b->size)
-			b->size++; /* account for trailing NULL char */
-	}
-	return b->err;
+int concat_buf_finish(struct concat_buf *b) {
+  if (b->streamf) {
+    fclose(b->streamf);
+    b->streamf = NULL;
+    if (b->size)
+      b->size++; /* account for trailing NULL char */
+  }
+  return b->err;
 }
 
-int concat_write(struct concat_buf *b, int fd, int offset)
-{
-	concat_buf_finish(b);
+int concat_write(struct concat_buf *b, int fd, int offset) {
+  concat_buf_finish(b);
 
-	if (b->err) {
-		errno = b->err;
-		return -1;
-	}
+  if (b->err) {
+    errno = b->err;
+    return -1;
+  }
 
-	if (b->size - offset > 0)
-		return write(fd, b->buf + offset, b->size - offset);
-	else {
-		errno = EINVAL;
-		return -1;
-	}
+  if (b->size - offset > 0)
+    return write(fd, b->buf + offset, b->size - offset);
+  else {
+    errno = EINVAL;
+    return -1;
+  }
 }
 
-void concat_buf_release(struct concat_buf *b)
-{
-	concat_buf_finish(b);
-	if (b->buf) {
-		free(b->buf);
-		memset(b, 0, sizeof(*b));
-	}
+void concat_buf_release(struct concat_buf *b) {
+  concat_buf_finish(b);
+  if (b->buf) {
+    free(b->buf);
+    memset(b, 0, sizeof(*b));
+  }
 }
 
